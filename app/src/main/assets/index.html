@@ -1,0 +1,1711 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+  <title>WordWriter - Mobile Word</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- React and ReactDOM CDN -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <!-- Babel for JSX compilation in browser -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <!-- Google Fonts for Poppins & Hindi Noto Sans Devanagari -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Noto+Sans+Devanagari:wght@300;400;500;700&display=swap" rel="stylesheet">
+  
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f1f5f9;
+      overflow-x: hidden;
+    }
+    
+    /* Typography Overrides */
+    .font-arial { font-family: Arial, Helvetica, sans-serif !important; }
+    .font-times { font-family: 'Times New Roman', Times, serif !important; }
+    .font-poppins { font-family: 'Poppins', sans-serif !important; }
+    .font-devanagari { font-family: 'Noto Sans Devanagari', sans-serif !important; }
+    .font-mangal { font-family: 'Mangal', 'Noto Sans Devanagari', sans-serif !important; }
+    .font-devlys { font-family: 'DevLys', 'Noto Sans Devanagari', sans-serif !important; }
+    .font-krutidev { font-family: 'Kruti Dev', 'Noto Sans Devanagari', sans-serif !important; }
+    .font-arialunicode { font-family: 'Arial Unicode MS', 'Noto Sans Devanagari', sans-serif !important; }
+    .font-calibri { font-family: Calibri, Candara, Arial, sans-serif !important; }
+
+    /* Custom scrollbar hiding */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+
+    /* Column Count Styles with column rule separator */
+    .word-columns-1 {
+      column-count: 1 !important;
+    }
+    .word-columns-2 {
+      column-count: 2 !important;
+      column-gap: 28px !important;
+      column-rule: 1px solid #cbd5e1 !important;
+    }
+    .word-columns-3 {
+      column-count: 3 !important;
+      column-gap: 20px !important;
+      column-rule: 1px solid #cbd5e1 !important;
+    }
+    .word-columns-4 {
+      column-count: 4 !important;
+      column-gap: 16px !important;
+      column-rule: 1px solid #cbd5e1 !important;
+    }
+
+    /* Base64 & Local Resizable Editor Image Styles */
+    .editor-image {
+      max-width: 100%;
+      height: auto;
+      display: block;
+      margin: 14px auto;
+      border-radius: 6px;
+      border: 2px solid transparent;
+      transition: all 0.2s;
+    }
+    .editor-image:hover, .editor-image:focus {
+      border-color: #2563eb;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+    }
+
+    /* Custom Tables inside the editor with black borders like MS Word and resizability */
+    .editor-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: 13px;
+      border: 2px solid #000000 !important;
+    }
+    .editor-table th {
+      background-color: #f8fafc;
+      font-weight: 600;
+      color: #000000;
+    }
+    .editor-table td, .editor-table th {
+      border: 1px solid #000000 !important;
+      padding: 10px;
+      min-width: 60px;
+      resize: both;
+      overflow: auto;
+      transition: background-color 0.15s ease;
+    }
+
+    /* Comment text highlights like MS Word */
+    .comment-highlight {
+      background-color: rgba(254, 240, 138, 0.6) !important;
+      border-bottom: 2px dashed #eab308 !important;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .comment-highlight:hover {
+      background-color: rgba(254, 240, 138, 0.9) !important;
+    }
+
+    /* Page Break Separation style inside Editor */
+    .page-break {
+      border-top: 2px dashed #94a3b8;
+      margin: 28px 0;
+      position: relative;
+      content-visibility: auto;
+    }
+    .page-break::after {
+      content: "PAGE BREAK (PRINT CUTLINE)";
+      position: absolute;
+      top: -9px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #ffffff;
+      padding: 0 12px;
+      font-size: 10px;
+      color: #64748b;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+    }
+
+    /* Scrollable Layout scale support */
+    .page-container {
+      perspective: 1000px;
+    }
+
+    /* System printing styles - Ensuring Columns print same to same */
+    @media print {
+      body {
+        background-color: white !important;
+        padding: 0 !important;
+        margin: 0 !important;
+      }
+      .no-print {
+        display: none !important;
+      }
+      .print-page {
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+        padding: 40px !important;
+        box-shadow: none !important;
+        border: none !important;
+      }
+      .word-columns-1 {
+        column-count: 1 !important;
+        -webkit-column-count: 1 !important;
+      }
+      .word-columns-2 {
+        column-count: 2 !important;
+        -webkit-column-count: 2 !important;
+        column-gap: 28px !important;
+        column-rule: 1px solid #cbd5e1 !important;
+      }
+      .word-columns-3 {
+        column-count: 3 !important;
+        -webkit-column-count: 3 !important;
+        column-gap: 20px !important;
+        column-rule: 1px solid #cbd5e1 !important;
+      }
+      .word-columns-4 {
+        column-count: 4 !important;
+        -webkit-column-count: 4 !important;
+        column-gap: 16px !important;
+        column-rule: 1px solid #cbd5e1 !important;
+      }
+    }
+
+    /* Placeholder text for Contenteditable */
+    [contenteditable=true]:empty:before {
+      content: attr(placeholder);
+      color: #94a3b8;
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useRef } = React;
+
+    function transliterateWord(word) {
+      const lowerWord = word.toLowerCase().trim();
+      if (!lowerWord) return "";
+
+      const dict = {
+        "namaste": "नमस्ते",
+        "kya": "क्या",
+        "hai": "है",
+        "nahi": "नहीं",
+        "nahin": "नहीं",
+        "hain": "हैं",
+        "ke": "के",
+        "ko": "को",
+        "me": "में",
+        "mein": "में",
+        "main": "मैं",
+        "aap": "आप",
+        "dhanyawad": "धन्यवाद",
+        "dhanyavaad": "धन्यवाद",
+        "shukriya": "शुक्रिया",
+        "aur": "और",
+        "bhi": "भी",
+        "is": "इस",
+        "ka": "का",
+        "ki": "की",
+        "se": "से",
+        "hi": "ही",
+        "kar": "कर",
+        "karta": "करता",
+        "karte": "करते",
+        "karti": "करती",
+        "raha": "रहा",
+        "rahe": "रहे",
+        "rahi": "रही",
+        "tha": "था",
+        "the": "थे",
+        "thi": "थी",
+        "ek": "एक",
+        "ho": "हो",
+        "hota": "होता",
+        "hote": "होते",
+        "hoti": "होती",
+        "ye": "ये",
+        "yeh": "यह",
+        "wo": "वो",
+        "woh": "वह",
+        "bhai": "भाई",
+        "behen": "बहन",
+        "ghar": "घर",
+        "kaam": "काम",
+        "aaj": "आज",
+        "kal": "कल",
+        "parso": "परसों",
+        "ab": "अब",
+        "tab": "तब",
+        "kab": "कब",
+        "sab": "सब",
+        "dost": "दोस्त",
+        "pyar": "प्यार",
+        "pyaar": "प्यार",
+        "khush": "खुश",
+        "desh": "देश",
+        "bharat": "भारत",
+        "shubh": "शुभ",
+        "din": "दिन",
+        "raat": "रात",
+        "samay": "समय",
+        "likh": "लिख",
+        "padh": "पढ़",
+        "bol": "बोल",
+        "sun": "सुन",
+        "dekh": "देख",
+        "aa": "आ",
+        "ja": "जा",
+        "khana": "खाना",
+        "peena": "पीना",
+        "rona": "रोना",
+        "hasna": "हंसना",
+        "sochna": "सोचना",
+        "samajh": "समझ",
+        "naam": "नाम",
+        "baat": "बात",
+        "log": "लोग",
+        "shahar": "शहर",
+        "gaon": "गांव",
+        "paani": "पानी",
+        "hawa": "हवा",
+        "safal": "सफल",
+        "shanti": "शांति",
+        "man": "मन",
+        "dil": "दिल",
+        "samasya": "समस्या",
+        "samadhan": "समाधान",
+        "likhna": "लिखना",
+        "padhna": "पढ़ना",
+        "karna": "करना",
+        "hona": "होना",
+        "chalna": "चलना",
+        "bolna": "बोलना",
+        "dekhna": "देखना",
+        "jaana": "जाना",
+        "aana": "आना",
+        "khushboo": "खुशबू",
+        "sunder": "सुंदर",
+        "sundar": "सुंदर",
+        "achha": "अच्छा",
+        "achhe": "अच्छे",
+        "bura": "बुरा",
+        "chhota": "छोटा",
+        "bada": "बड़ा",
+        "bahut": "बहुत",
+        "kam": "कम",
+        "jyada": "ज्यादा",
+        "zyada": "ज्यादा",
+        "kuch": "कुछ",
+        "kaise": "कैसे",
+        "kyun": "क्यों",
+        "kyon": "क्यों",
+        "kahaan": "कहाँ",
+        "kahan": "कहाँ",
+        "vahan": "वहाँ",
+        "vahaan": "वहाँ",
+        "yahan": "यहाँ",
+        "yahaan": "यहाँ",
+        "kis": "किस",
+        "kise": "किसे",
+        "kin": "किन",
+        "mera": "मेरा",
+        "meri": "मेरी",
+        "mere": "मेरे",
+        "tumhara": "तुम्हारा",
+        "tumhari": "तुम्हारी",
+        "tumhare": "तुम्हारे",
+        "apna": "अपना",
+        "apni": "अपनी",
+        "apne": "अपने",
+        "uska": "उसका",
+        "uski": "उसकी",
+        "uske": "उसके",
+        "unka": "उनका",
+        "unki": "उनकी",
+        "unke": "उनके",
+        "hamara": "हमारा",
+        "hamari": "हमारी",
+        "hamare": "हमारे",
+        "mujhe": "मुझे",
+        "tujhe": "तुझे",
+        "hame": "हमें",
+        "unhe": "उन्हें",
+        "ise": "इसे",
+        "inhone": "इन्होंने",
+        "unhone": "उन्होंने",
+        "to": "तो"
+      };
+
+      if (dict[lowerWord]) {
+        return dict[lowerWord];
+      }
+
+      const consonants = {
+        "ksh": "क्ष", "gya": "ज्ञा", "gy": "ज्ञ", "tra": "त्र", "tr": "त्र",
+        "kh": "ख", "gh": "घ", "ch": "च", "chh": "छ", "jh": "झ", "th": "थ",
+        "dh": "ध", "ph": "फ", "bh": "भ", "sh": "श", "shh": "ष",
+        "k": "क", "g": "ग", "j": "ज", "t": "त", "d": "द", "n": "न",
+        "p": "प", "b": "ब", "m": "म", "y": "य", "r": "र", "l": "ल",
+        "v": "व", "w": "व", "h": "ह", "s": "स", "f": "फ़", "z": "ज़"
+      };
+
+      const vowels = {
+        "aa": "ा", "ai": "ै", "au": "ौ", "ee": "ी", "oo": "ू", "ae": "े",
+        "a": "", "i": "ि", "u": "ु", "e": "े", "o": "ो"
+      };
+
+      const initialVowels = {
+        "aa": "आ", "ai": "ऐ", "au": "औ", "ee": "ई", "oo": "ऊ", "ae": "ए",
+        "a": "अ", "i": "इ", "u": "उ", "e": "ए", "o": "ओ"
+      };
+
+      let result = "";
+      let i = 0;
+      let lastWasConsonant = false;
+
+      while (i < lowerWord.length) {
+        let matchConsonant = "";
+        let matchLen = 0;
+
+        if (i + 3 <= lowerWord.length) {
+          const trip = lowerWord.substring(i, i + 3);
+          if (consonants[trip]) {
+            matchConsonant = consonants[trip];
+            matchLen = 3;
+          }
+        }
+        if (!matchConsonant && i + 2 <= lowerWord.length) {
+          const doub = lowerWord.substring(i, i + 2);
+          if (consonants[doub]) {
+            matchConsonant = consonants[doub];
+            matchLen = 2;
+          }
+        }
+        if (!matchConsonant && i + 1 <= lowerWord.length) {
+          const sing = lowerWord.substring(i, i + 1);
+          if (consonants[sing]) {
+            matchConsonant = consonants[sing];
+            matchLen = 1;
+          }
+        }
+
+        if (matchConsonant) {
+          if (lastWasConsonant) {
+            result += "्";
+          }
+          result += matchConsonant;
+          i += matchLen;
+          lastWasConsonant = true;
+          continue;
+        }
+
+        let matchVowel = "";
+        let vLen = 0;
+
+        if (i + 2 <= lowerWord.length) {
+          const doubV = lowerWord.substring(i, i + 2);
+          if (lastWasConsonant) {
+            if (vowels[doubV] !== undefined) {
+              matchVowel = vowels[doubV];
+              vLen = 2;
+            }
+          } else {
+            if (initialVowels[doubV] !== undefined) {
+              matchVowel = initialVowels[doubV];
+              vLen = 2;
+            }
+          }
+        }
+
+        if (matchVowel === "" && i + 1 <= lowerWord.length) {
+          const singV = lowerWord.substring(i, i + 1);
+          if (lastWasConsonant) {
+            if (vowels[singV] !== undefined) {
+              matchVowel = vowels[singV];
+              vLen = 1;
+            }
+          } else {
+            if (initialVowels[singV] !== undefined) {
+              matchVowel = initialVowels[singV];
+              vLen = 1;
+            }
+          }
+        }
+
+        if (matchVowel !== "") {
+          result += matchVowel;
+          i += vLen;
+          lastWasConsonant = false;
+        } else {
+          result += lowerWord[i];
+          i++;
+          lastWasConsonant = false;
+        }
+      }
+
+      return result;
+    }
+
+    function App() {
+      const [fileName, setFileName] = useState("Document 1");
+      const [columnCount, setColumnCount] = useState(1);
+      const [fontFamily, setFontFamily] = useState("Arial");
+      const [fontSize, setFontSize] = useState("16");
+      const [textColor, setTextColor] = useState("#000000");
+      const [highlightColor, setHighlightColor] = useState("#ffffff");
+      const [lineSpacing, setLineSpacing] = useState("1.5");
+      const [wordCount, setWordCount] = useState(0);
+      const [charCount, setCharCount] = useState(0);
+      const [scale, setScale] = useState(100);
+      
+      // Comments state
+      const [comments, setComments] = useState([]);
+      
+      // Active Cell and Table state
+      const [activeCell, setActiveCell] = useState(null);
+      const [activeTable, setActiveTable] = useState(null);
+
+      // Modals
+      const [showImageModal, setShowImageModal] = useState(false);
+      const [showHelpModal, setShowHelpModal] = useState(false);
+      const [isFabOpen, setIsFabOpen] = useState(false);
+
+      // Image modal states
+      const [imageUrlInput, setImageUrlInput] = useState("");
+      
+      // Hindi + English Typing Mode state
+      const [typingLanguage, setTypingLanguage] = useState("english");
+
+      const devanagariKeyboard = [
+        "अ", "आ", "इ", "ई", "उ", "ऊ", "ए", "ऐ", "ओ", "औ", 
+        "क", "ख", "ग", "घ", "ङ",
+        "च", "छ", "ज", "झ", "ञ",
+        "ट", "ठ", "ड", "ढ", "ण",
+        "त", "थ", "द", "ध", "न",
+        "प", "फ", "ब", "भ", "म",
+        "य", "र", "ल", "व", "श", "ष", "स", "ह",
+        "ा", "ि", "ी", "ु", "ू", "े", "ै", "ो", "ौ", "्", "ं", "ः", "ँ", "्र", "र्"
+      ];
+
+      const insertCharacter = (char) => {
+        if (!editorRef.current) return;
+        editorRef.current.focus();
+        
+        const selection = window.getSelection();
+        if (selection && selection.rangeCount > 0) {
+          const range = selection.getRangeAt(0);
+          range.deleteContents();
+          
+          const textNode = document.createTextNode(char);
+          range.insertNode(textNode);
+          
+          // Move cursor after the inserted character
+          range.setStartAfter(textNode);
+          range.setEndAfter(textNode);
+          selection.removeAllRanges();
+          selection.addRange(range);
+        } else {
+          editorRef.current.innerHTML += char;
+        }
+        handleEditorChange();
+      };
+
+      const handleKeyDown = (e) => {
+        if (typingLanguage === "hindi") {
+          if (e.key === ' ' || e.key === 'Enter') {
+            const selection = window.getSelection();
+            if (!selection || selection.rangeCount === 0) return;
+            const range = selection.getRangeAt(0);
+            const textNode = range.startContainer;
+            
+            if (textNode.nodeType === Node.TEXT_NODE) {
+              const text = textNode.nodeValue;
+              const offset = range.startOffset;
+              
+              // Get content typed before caret
+              const beforeCursor = text.substring(0, offset);
+              const words = beforeCursor.split(/(\s+)/);
+              
+              if (words.length > 0) {
+                const lastWord = words[words.length - 1];
+                // Convert Hinglish text on-the-fly when typing a spacing character
+                if (lastWord && /^[a-zA-Z]+$/.test(lastWord)) {
+                  e.preventDefault(); // Intercept spacing character
+                  
+                  const converted = transliterateWord(lastWord);
+                  const spaceChar = e.key === ' ' ? ' ' : '\n';
+                  const startText = beforeCursor.substring(0, beforeCursor.length - lastWord.length);
+                  const afterCursor = text.substring(offset);
+                  
+                  textNode.nodeValue = startText + converted + spaceChar + afterCursor;
+                  
+                  // Position cursor immediately after the inserted space
+                  const newRange = document.createRange();
+                  newRange.setStart(textNode, (startText + converted + spaceChar).length);
+                  newRange.setEnd(textNode, (startText + converted + spaceChar).length);
+                  selection.removeAllRanges();
+                  selection.addRange(newRange);
+                  
+                  handleEditorChange();
+                }
+              }
+            }
+          }
+        }
+      };
+      
+      const editorRef = useRef(null);
+      const fileInputRef = useRef(null);
+
+      // Effect to track selected cells & table
+      useEffect(() => {
+        const handleSelectionOrClick = () => {
+          const selection = window.getSelection();
+          if (selection && selection.rangeCount > 0) {
+            let node = selection.getRangeAt(0).startContainer;
+            let cellNode = null;
+            let tableNode = null;
+            
+            // Walk up parent chain to find active TD or TABLE
+            while (node && node !== editorRef.current && node.parentNode) {
+              if (node.nodeName === 'TD' || node.nodeName === 'TH') {
+                cellNode = node;
+              }
+              if (node.nodeName === 'TABLE') {
+                tableNode = node;
+                break;
+              }
+              node = node.parentNode;
+            }
+            
+            setActiveCell(cellNode);
+            setActiveTable(tableNode);
+            
+            // Set light-blue background for the active editable cell
+            if (tableNode) {
+              tableNode.querySelectorAll('td, th').forEach(c => {
+                if (c === cellNode) {
+                  c.style.backgroundColor = 'rgba(239, 246, 255, 0.9)'; // light blue-50 accent
+                } else {
+                  c.style.backgroundColor = '';
+                }
+              });
+            }
+          }
+        };
+
+        document.addEventListener('selectionchange', handleSelectionOrClick);
+        document.addEventListener('click', handleSelectionOrClick);
+
+        return () => {
+          document.removeEventListener('selectionchange', handleSelectionOrClick);
+          document.removeEventListener('click', handleSelectionOrClick);
+        };
+      }, []);
+
+      const fonts = [
+        { name: "Arial", value: "Arial" },
+        { name: "Times New Roman", value: "Times New Roman" },
+        { name: "Poppins", value: "Poppins" },
+        { name: "Noto Sans Devanagari", value: "Noto Sans Devanagari" },
+        { name: "Mangal", value: "Mangal" },
+        { name: "DevLys", value: "DevLys" },
+        { name: "Kruti Dev", value: "Kruti Dev" },
+        { name: "Arial Unicode", value: "Arial Unicode" },
+        { name: "Calibri", value: "Calibri" }
+      ];
+
+      const fontSizes = ["12", "14", "16", "18", "22", "28"];
+
+      const defaultContent = `
+        <h1 style="text-align: center; color: #1e3a8a; font-size: 24px; font-weight: bold; margin-bottom: 8px;">WordWriter - Mobile Word</h1>
+        <p style="text-align: center; color: #64748b; font-style: italic; margin-bottom: 24px;">Mobile-Optimized Elegant Word Processor</p>
+        
+        <p>Yahan se likhna shuru karein... Two Column feature try karne ke liye upar Layout se 'Two Column' select karein.</p>
+        <br/>
+        <p><b>Core App Features:</b></p>
+        <ul>
+          <li><b>A4 Live Flow:</b> Live editable document modeled exactly around classical A4 standards.</li>
+          <li><b>Multi-Column Columns:</b> Format pages dynamically into 1, 2, 3 or 4 columns (Layout panel). Text automatically flows across gaps!</li>
+          <li><b>Rich Custom Formatting:</b> Modify bold, italic, underline, size, text color, background highlights, and line height.</li>
+          <li><b>Insert Tools:</b> Click the floating action button or Layout to append 3x3 tables, images, and standard page breaks.</li>
+          <li><b>Print & Export:</b> Convert any article/report to professional PDF instantly using PDF Export.</li>
+        </ul>
+        <br/>
+        <p><i>Devanagari Script Supported:</i> आप यहाँ हिंदी भाषा में अत्यंत सुंदर आलेख लिख सकते हैं। फोंट बॉक्स से <b>Noto Sans Devanagari</b> फोंट का चयन करके इसका परीक्षण करें।</p>
+      `;
+
+      // Mount logic
+      useEffect(() => {
+        const savedContent = localStorage.getItem("word_editor_data");
+        const savedFileName = localStorage.getItem("word_editor_name");
+        const savedCols = localStorage.getItem("word_editor_cols");
+        const savedSpacing = localStorage.getItem("word_editor_spacing");
+        const savedComments = localStorage.getItem("word_editor_comments");
+
+        if (savedContent && editorRef.current) {
+          editorRef.current.innerHTML = savedContent;
+        } else if (editorRef.current) {
+          editorRef.current.innerHTML = defaultContent;
+        }
+
+        if (savedFileName) setFileName(savedFileName);
+        if (savedCols) setColumnCount(parseInt(savedCols));
+        if (savedSpacing) {
+          setLineSpacing(savedSpacing);
+          if (editorRef.current) editorRef.current.style.lineHeight = savedSpacing;
+        }
+
+        if (savedComments) {
+          try {
+            setComments(JSON.parse(savedComments));
+          } catch(e) {
+            console.error("Failed to parse comments", e);
+          }
+        }
+
+        updateStats();
+
+        // Responsive Mobile Auto Zoom logic
+        const width = window.innerWidth;
+        if (width < 820) {
+          const autoScale = Math.round(((width - 24) / 794) * 100);
+          setScale(Math.max(30, Math.min(autoScale, 95)));
+        }
+      }, []);
+
+      const updateStats = () => {
+        if (editorRef.current) {
+          const text = editorRef.current.innerText || "";
+          const words = text.trim() === "" ? 0 : text.trim().split(/\s+/).length;
+          setWordCount(words);
+          setCharCount(text.length);
+        }
+      };
+
+      const handleEditorChange = () => {
+        if (editorRef.current) {
+          localStorage.setItem("word_editor_data", editorRef.current.innerHTML);
+        }
+        updateStats();
+      };
+
+      const handleFileNameChange = (e) => {
+        const name = e.target.value;
+        setFileName(name);
+        localStorage.setItem("word_editor_name", name);
+      };
+
+      // Executing styling commands
+      const executeCommand = (command, value = "") => {
+        document.execCommand(command, false, value);
+        if (editorRef.current) {
+          editorRef.current.focus();
+        }
+        handleEditorChange();
+      };
+
+      // Custom font changer
+      const applyFontFamily = (e) => {
+        const fontValue = e.target.value;
+        setFontFamily(fontValue);
+        executeCommand("fontName", fontValue);
+      };
+
+      // Custom font size mapper
+      const applyFontSize = (e) => {
+        const size = e.target.value;
+        setFontSize(size);
+        let mapped = "3";
+        if (size === "12") mapped = "2";
+        else if (size === "14") mapped = "3";
+        else if (size === "16") mapped = "4";
+        else if (size === "18") mapped = "5";
+        else if (size === "22") mapped = "6";
+        else if (size === "28") mapped = "7";
+        executeCommand("fontSize", mapped);
+      };
+
+      // Spacing
+      const applyLineSpacing = (spacing) => {
+        setLineSpacing(spacing);
+        localStorage.setItem("word_editor_spacing", spacing);
+        if (editorRef.current) {
+          editorRef.current.style.lineHeight = spacing;
+        }
+        handleEditorChange();
+      };
+
+      // Table Generator
+      const insertTable = () => {
+        const tableHtml = `
+          <table class="editor-table">
+            <thead>
+              <tr>
+                <th contenteditable="true">Item Header</th>
+                <th contenteditable="true">Description</th>
+                <th contenteditable="true">Quantity</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td contenteditable="true">Sample Cell</td>
+                <td contenteditable="true">Click cell to select and type</td>
+                <td contenteditable="true">1</td>
+              </tr>
+              <tr>
+                <td contenteditable="true">Sample Cell 2</td>
+                <td contenteditable="true">Editable Word Table</td>
+                <td contenteditable="true">5</td>
+              </tr>
+            </tbody>
+          </table>
+          <p><br></p>
+        `;
+        executeCommand("insertHTML", tableHtml);
+        setIsFabOpen(false);
+      };
+
+      // Add Row to Table
+      const addRow = () => {
+        if (!activeTable) return;
+        const tbody = activeTable.querySelector('tbody') || activeTable;
+        let targetRow = null;
+        if (activeCell) {
+          targetRow = activeCell.closest('tr');
+        }
+        
+        const numCols = activeTable.rows[0]?.cells?.length || 3;
+        const newRow = document.createElement('tr');
+        for (let i = 0; i < numCols; i++) {
+          const newCell = document.createElement('td');
+          newCell.innerHTML = "New Cell";
+          newCell.setAttribute('contenteditable', 'true');
+          newRow.appendChild(newCell);
+        }
+        
+        if (targetRow) {
+          targetRow.parentNode.insertBefore(newRow, targetRow.nextSibling);
+        } else {
+          tbody.appendChild(newRow);
+        }
+        handleEditorChange();
+      };
+
+      // Add Column to Table
+      const addColumn = () => {
+        if (!activeTable) return;
+        let colIndex = -1;
+        if (activeCell) {
+          colIndex = activeCell.cellIndex;
+        }
+        
+        Array.from(activeTable.rows).forEach(row => {
+          const isHeader = row.parentNode?.nodeName === 'THEAD' || row.cells[0]?.nodeName === 'TH';
+          const newCell = document.createElement(isHeader ? 'th' : 'td');
+          newCell.innerHTML = isHeader ? "Header" : "Cell";
+          newCell.setAttribute('contenteditable', 'true');
+          if (colIndex >= 0 && colIndex < row.cells.length) {
+            row.insertBefore(newCell, row.cells[colIndex + 1]);
+          } else {
+            row.appendChild(newCell);
+          }
+        });
+        handleEditorChange();
+      };
+
+      // Delete Active Row
+      const deleteRow = () => {
+        if (!activeTable || !activeCell) return;
+        const row = activeCell.closest('tr');
+        if (row) {
+          row.parentNode.removeChild(row);
+          setActiveCell(null);
+          handleEditorChange();
+        }
+      };
+
+      // Delete Active Column
+      const deleteColumn = () => {
+        if (!activeTable || !activeCell) return;
+        const colIndex = activeCell.cellIndex;
+        if (colIndex >= 0) {
+          Array.from(activeTable.rows).forEach(row => {
+            if (row.cells[colIndex]) {
+              row.removeChild(row.cells[colIndex]);
+            }
+          });
+          setActiveCell(null);
+          handleEditorChange();
+        }
+      };
+
+      // Comments: Add a new comment to highlighted text
+      const addComment = () => {
+        const selection = window.getSelection();
+        if (!selection || selection.isCollapsed || selection.toString().trim() === "") {
+          alert("Kripya pehle document me kuch text select/highlight karein jisme comment jodna hai!");
+          return;
+        }
+
+        const selectedText = selection.toString();
+        const commentId = "comment_" + Date.now();
+
+        try {
+          const range = selection.getRangeAt(0);
+          const span = document.createElement("span");
+          span.className = "comment-highlight";
+          span.setAttribute("data-comment-id", commentId);
+          range.surroundContents(span);
+          
+          const newComment = {
+            id: commentId,
+            text: selectedText,
+            author: "User Comment",
+            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            body: "Write your comment here..."
+          };
+
+          const updatedComments = [...comments, newComment];
+          setComments(updatedComments);
+          localStorage.setItem("word_editor_comments", JSON.stringify(updatedComments));
+          handleEditorChange();
+        } catch (e) {
+          console.warn("surroundContents failed, falling back to highlight styling: ", e);
+          // Fallback: apply highlight color and add comment
+          document.execCommand("backColor", false, "rgba(254, 240, 138, 0.6)");
+          const newComment = {
+            id: commentId,
+            text: selectedText,
+            author: "User Comment",
+            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            body: "Write your comment here..."
+          };
+
+          const updatedComments = [...comments, newComment];
+          setComments(updatedComments);
+          localStorage.setItem("word_editor_comments", JSON.stringify(updatedComments));
+          handleEditorChange();
+        }
+      };
+
+      // Comments: Update specific comment body
+      const updateCommentBody = (id, newBody) => {
+        const updated = comments.map(c => c.id === id ? { ...c, body: newBody } : c);
+        setComments(updated);
+        localStorage.setItem("word_editor_comments", JSON.stringify(updated));
+      };
+
+      // Comments: Delete a comment & clean its span highlighting
+      const deleteComment = (id) => {
+        const updated = comments.filter(c => c.id !== id);
+        setComments(updated);
+        localStorage.setItem("word_editor_comments", JSON.stringify(updated));
+
+        if (editorRef.current) {
+          const highlights = editorRef.current.querySelectorAll(`[data-comment-id="${id}"]`);
+          highlights.forEach(span => {
+            const parent = span.parentNode;
+            if (parent) {
+              while (span.firstChild) {
+                parent.insertBefore(span.firstChild, span);
+              }
+              parent.removeChild(span);
+            }
+          });
+          handleEditorChange();
+        }
+      };
+
+      // Insert Page Break line
+      const insertPageBreak = () => {
+        const pageBreakHtml = `<div class="page-break" contenteditable="false"></div><p><br></p>`;
+        executeCommand("insertHTML", pageBreakHtml);
+        setIsFabOpen(false);
+      };
+
+      // Image handlers
+      const triggerLocalImageUpload = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            const imgHtml = `<img src="${event.target.result}" class="editor-image" alt="Base64 Image" />`;
+            executeCommand("insertHTML", imgHtml);
+          };
+          reader.readAsDataURL(file);
+        }
+        setShowImageModal(false);
+        setIsFabOpen(false);
+      };
+
+      const insertImageUrl = () => {
+        if (imageUrlInput.trim() !== "") {
+          const imgHtml = `<img src="${imageUrlInput.trim()}" class="editor-image" alt="URL Image" />`;
+          executeCommand("insertHTML", imgHtml);
+          setImageUrlInput("");
+          setShowImageModal(false);
+          setIsFabOpen(false);
+        }
+      };
+
+      const insertPresetImage = (url) => {
+        const imgHtml = `<img src="${url}" class="editor-image" alt="Preset Graphic" />`;
+        executeCommand("insertHTML", imgHtml);
+        setShowImageModal(false);
+        setIsFabOpen(false);
+      };
+
+      const clearDocument = () => {
+        if (window.confirm("Aap sach me ye dastaavez mitaana chahte hain?")) {
+          if (editorRef.current) {
+            editorRef.current.innerHTML = "<p><br></p>";
+            handleEditorChange();
+          }
+        }
+      };
+
+      const clearFormatting = () => {
+        executeCommand("removeFormat");
+        setColumnCount(1);
+        localStorage.setItem("word_editor_cols", "1");
+        setLineSpacing("1.5");
+        if (editorRef.current) {
+          editorRef.current.style.lineHeight = "1.5";
+        }
+        handleEditorChange();
+      };
+
+      // PDF print integration with native android adapter fallback
+      const saveAsPDF = () => {
+        if (window.AndroidPrint) {
+          window.AndroidPrint.printDocument(fileName);
+        } else {
+          window.print();
+        }
+      };
+
+      const handleShare = () => {
+        if (navigator.share) {
+          navigator.share({
+            title: fileName,
+            text: editorRef.current ? editorRef.current.innerText : "WordWriter Document",
+          }).catch(console.error);
+        } else {
+          navigator.clipboard.writeText(editorRef.current ? editorRef.current.innerText : "");
+          alert("Dastaavez copy ho gaya hai clipboard par!");
+        }
+      };
+
+      return (
+        <div className="flex flex-col min-h-screen bg-slate-100 pb-16">
+          
+          {/* MS WORD TITLE BAR */}
+          <div className="no-print bg-blue-700 text-white px-4 py-2.5 flex items-center justify-between shadow-md select-none shrink-0">
+            <div className="flex items-center gap-3">
+              <div className="bg-white text-blue-700 font-extrabold text-sm px-2 py-1 rounded-md shadow flex items-center justify-center">
+                W
+              </div>
+              <div className="flex flex-col">
+                <input 
+                  type="text" 
+                  value={fileName}
+                  onChange={handleFileNameChange}
+                  className="bg-transparent text-sm font-bold border-b border-transparent hover:border-blue-400 focus:border-white focus:outline-none px-1 py-0.5 rounded max-w-[150px] sm:max-w-[280px] text-white transition truncate"
+                  placeholder="Document Name"
+                />
+                <span className="text-[10px] text-blue-200 ml-1 font-medium">Auto-saved Locally</span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <button 
+                onClick={saveAsPDF}
+                className="bg-blue-600 hover:bg-blue-500 active:bg-blue-800 text-white text-xs px-2.5 py-1.5 rounded-md flex items-center gap-1 font-semibold transition"
+                title="Export Document as PDF"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+                </svg>
+                <span>PDF</span>
+              </button>
+
+              <button 
+                onClick={handleShare}
+                className="bg-blue-600 hover:bg-blue-500 active:bg-blue-800 text-white text-xs px-2.5 py-1.5 rounded-md flex items-center gap-1 font-semibold transition"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.684 10.742l4.828-2.413m0 5.34l-4.828-2.414m5.656 3.684a3 3 0 11-6 0 3 3 0 016 0zm-6-8a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                <span className="hidden sm:inline">Share</span>
+              </button>
+
+              <button 
+                onClick={clearDocument}
+                className="bg-red-600 hover:bg-red-500 active:bg-red-800 text-white text-xs px-2.5 py-1.5 rounded-md flex items-center gap-1 font-semibold transition"
+              >
+                <span className="hidden sm:inline">Clear</span>
+                <span className="sm:hidden">❌</span>
+              </button>
+
+              <button 
+                onClick={() => setShowHelpModal(true)}
+                className="bg-blue-800 hover:bg-blue-950 text-white w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs"
+              >
+                ?
+              </button>
+            </div>
+          </div>
+
+          {/* TWO ROW SCROLLABLE RIBBON TOOLBAR */}
+          <div className="no-print bg-white border-b border-slate-200 shadow-sm sticky top-0 z-30 select-none">
+            
+            {/* Row 1: Fonts and Styles */}
+            <div className="flex items-center gap-2.5 px-3 py-1.5 border-b border-slate-100 overflow-x-auto no-scrollbar scroll-smooth">
+              
+              {/* Language Selector Toggle */}
+              <button
+                onClick={() => setTypingLanguage(prev => prev === "english" ? "hindi" : "english")}
+                className={`px-3 py-1.5 rounded-md border text-xs font-bold flex items-center gap-1.5 shrink-0 shadow-sm transition ${
+                  typingLanguage === "hindi" 
+                    ? "bg-amber-100 text-amber-900 border-amber-300 font-extrabold" 
+                    : "bg-slate-100 text-slate-800 border-slate-300"
+                }`}
+                title="Toggle Language: English or Hindi Typing"
+              >
+                <span className="text-sm">A/अ</span>
+                <span className="text-[10px] bg-white rounded px-1.5 py-0.5 border border-slate-200">
+                  {typingLanguage === "hindi" ? "हिन्दी" : "English"}
+                </span>
+              </button>
+
+              {/* Font Family Dropdown */}
+              <div className="flex items-center gap-1 shrink-0 bg-slate-50 border border-slate-200 rounded-md px-2 py-1">
+                <span className="text-[10px] text-slate-500 uppercase font-semibold">Font:</span>
+                <select 
+                  value={fontFamily} 
+                  onChange={applyFontFamily}
+                  className="text-xs bg-transparent font-medium text-slate-700 focus:outline-none"
+                >
+                  {fonts.map((f, i) => (
+                    <option key={i} value={f.value}>{f.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Font Size Dropdown */}
+              <div className="flex items-center gap-1 shrink-0 bg-slate-50 border border-slate-200 rounded-md px-2 py-1">
+                <span className="text-[10px] text-slate-500 uppercase font-semibold">Size:</span>
+                <select 
+                  value={fontSize} 
+                  onChange={applyFontSize}
+                  className="text-xs bg-transparent font-medium text-slate-700 focus:outline-none"
+                >
+                  {fontSizes.map((sz, i) => (
+                    <option key={i} value={sz}>{sz}px</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Separator */}
+              <div className="h-6 w-[1px] bg-slate-200 shrink-0 mx-0.5"></div>
+
+              {/* Style Toggles (B, I, U, S) */}
+              <div className="flex items-center gap-1 shrink-0">
+                <button 
+                  onClick={() => executeCommand("bold")}
+                  className="w-8 h-8 rounded-md hover:bg-slate-100 active:bg-slate-200 text-slate-800 border border-slate-200 font-extrabold flex items-center justify-center transition"
+                  title="Bold"
+                >
+                  B
+                </button>
+                <button 
+                  onClick={() => executeCommand("italic")}
+                  className="w-8 h-8 rounded-md hover:bg-slate-100 active:bg-slate-200 text-slate-800 border border-slate-200 italic font-bold flex items-center justify-center transition"
+                  title="Italic"
+                >
+                  I
+                </button>
+                <button 
+                  onClick={() => executeCommand("underline")}
+                  className="w-8 h-8 rounded-md hover:bg-slate-100 active:bg-slate-200 text-slate-800 border border-slate-200 underline font-bold flex items-center justify-center transition"
+                  title="Underline"
+                >
+                  U
+                </button>
+                <button 
+                  onClick={() => executeCommand("strikeThrough")}
+                  className="w-8 h-8 rounded-md hover:bg-slate-100 active:bg-slate-200 text-slate-800 border border-slate-200 line-through font-bold flex items-center justify-center transition"
+                  title="Strikethrough"
+                >
+                  S
+                </button>
+              </div>
+
+              {/* Line Height shortcuts */}
+              <div className="h-6 w-[1px] bg-slate-200 shrink-0 mx-0.5"></div>
+              <div className="flex items-center gap-1 shrink-0">
+                <span className="text-[10px] text-slate-400 font-bold uppercase mr-1">Line H:</span>
+                {["1.0", "1.5", "2.0"].map((sp) => (
+                  <button
+                    key={sp}
+                    onClick={() => applyLineSpacing(sp)}
+                    className={`text-[11px] px-2 py-1 rounded transition border ${
+                      lineSpacing === sp 
+                        ? 'bg-blue-100 text-blue-700 border-blue-300 font-bold' 
+                        : 'bg-white text-slate-600 border-slate-200'
+                    }`}
+                  >
+                    {sp}x
+                  </button>
+                ))}
+              </div>
+
+            </div>
+
+            {/* Row 2: Colors, Alignment, Lists, Actions */}
+            <div className="flex items-center gap-2.5 px-3 py-1.5 border-b border-slate-100 overflow-x-auto no-scrollbar scroll-smooth">
+              
+              {/* Color Picks */}
+              <div className="flex items-center gap-2 shrink-0">
+                {/* Text color picker iconized */}
+                <div className="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded px-1.5 py-0.5" title="Text Color">
+                  <span className="text-xs font-bold text-red-600 underline">A</span>
+                  <input 
+                    type="color" 
+                    value={textColor} 
+                    onChange={(e) => {
+                      setTextColor(e.target.value);
+                      executeCommand("foreColor", e.target.value);
+                    }}
+                    className="w-4 h-4 border-0 cursor-pointer p-0 bg-transparent"
+                  />
+                </div>
+
+                {/* Highlight text picker */}
+                <div className="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded px-1.5 py-0.5" title="Highlight Color">
+                  <span className="text-xs font-bold text-yellow-500">✎</span>
+                  <input 
+                    type="color" 
+                    value={highlightColor} 
+                    onChange={(e) => {
+                      setHighlightColor(e.target.value);
+                      executeCommand("hiliteColor", e.target.value);
+                    }}
+                    className="w-4 h-4 border-0 cursor-pointer p-0 bg-transparent"
+                  />
+                </div>
+              </div>
+
+              {/* Separator */}
+              <div className="h-6 w-[1px] bg-slate-200 shrink-0 mx-0.5"></div>
+
+              {/* Alignments */}
+              <div className="flex items-center gap-1 shrink-0">
+                <button 
+                  onClick={() => executeCommand("justifyLeft")}
+                  className="w-8 h-8 rounded-md hover:bg-slate-100 active:bg-slate-200 border border-slate-200 text-slate-700 flex items-center justify-center"
+                  title="Align Left"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 6h16M4 12h10M4 18h16" /></svg>
+                </button>
+                <button 
+                  onClick={() => executeCommand("justifyCenter")}
+                  className="w-8 h-8 rounded-md hover:bg-slate-100 active:bg-slate-200 border border-slate-200 text-slate-700 flex items-center justify-center"
+                  title="Align Center"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 6h16M7 12h10M4 18h16" /></svg>
+                </button>
+                <button 
+                  onClick={() => executeCommand("justifyRight")}
+                  className="w-8 h-8 rounded-md hover:bg-slate-100 active:bg-slate-200 border border-slate-200 text-slate-700 flex items-center justify-center"
+                  title="Align Right"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 6h16M10 12h10M4 18h16" /></svg>
+                </button>
+                <button 
+                  onClick={() => executeCommand("justifyFull")}
+                  className="w-8 h-8 rounded-md hover:bg-slate-100 active:bg-slate-200 border border-slate-200 text-slate-700 flex items-center justify-center"
+                  title="Justify"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 6h16M4 12h16M4 18h16" /></svg>
+                </button>
+              </div>
+
+              {/* Lists */}
+              <div className="flex items-center gap-1 shrink-0">
+                <button 
+                  onClick={() => executeCommand("insertUnorderedList")}
+                  className="w-8 h-8 rounded-md hover:bg-slate-100 active:bg-slate-200 border border-slate-200 text-slate-700 flex items-center justify-center font-bold"
+                  title="Bullet List"
+                >
+                  •≡
+                </button>
+                <button 
+                  onClick={() => executeCommand("insertOrderedList")}
+                  className="w-8 h-8 rounded-md hover:bg-slate-100 active:bg-slate-200 border border-slate-200 text-slate-700 flex items-center justify-center font-bold"
+                  title="Number List"
+                >
+                  1≡
+                </button>
+              </div>
+
+              {/* Separator */}
+              <div className="h-6 w-[1px] bg-slate-200 shrink-0 mx-0.5"></div>
+
+              {/* Undo Redo */}
+              <div className="flex items-center gap-1 shrink-0">
+                <button 
+                  onClick={() => executeCommand("undo")}
+                  className="w-8 h-8 rounded-md hover:bg-slate-100 active:bg-slate-200 border border-slate-200 text-slate-700 flex items-center justify-center"
+                  title="Undo"
+                >
+                  ↶
+                </button>
+                <button 
+                  onClick={() => executeCommand("redo")}
+                  className="w-8 h-8 rounded-md hover:bg-slate-100 active:bg-slate-200 border border-slate-200 text-slate-700 flex items-center justify-center"
+                  title="Redo"
+                >
+                  ↷
+                </button>
+              </div>
+
+              <div className="h-6 w-[1px] bg-slate-200 shrink-0 mx-0.5"></div>
+
+              {/* Clear Formatting */}
+              <button
+                onClick={clearFormatting}
+                className="text-xs font-semibold text-yellow-800 bg-yellow-100 hover:bg-yellow-200 active:bg-yellow-300 px-2.5 py-1.5 rounded-md border border-yellow-200 shrink-0"
+                title="Clear All Styling & Resets Layout"
+              >
+                Clear Format
+              </button>
+
+              <div className="h-6 w-[1px] bg-slate-200 shrink-0 mx-0.5"></div>
+
+              {/* Add Comment Button */}
+              <button
+                onClick={addComment}
+                className="text-xs font-semibold text-yellow-950 bg-yellow-300 hover:bg-yellow-400 active:bg-yellow-500 px-3 py-1.5 rounded-md border border-yellow-400 shrink-0 flex items-center gap-1 shadow-sm transition"
+                title="Insert yellow comment for selected text"
+              >
+                💬 Comment
+              </button>
+
+            </div>
+
+            {/* Layout Tab Actions (Columns & Element Additions) */}
+            <div className="flex items-center gap-2.5 px-3 py-1.5 bg-slate-50 overflow-x-auto no-scrollbar">
+              <span className="text-[10px] text-slate-400 font-extrabold tracking-wider shrink-0 uppercase">Layout:</span>
+              
+              {/* Columns config buttons */}
+              <div className="flex items-center gap-1.5 shrink-0">
+                {[1, 2, 3, 4].map((col) => (
+                  <button
+                    key={col}
+                    onClick={() => {
+                      setColumnCount(col);
+                      localStorage.setItem("word_editor_cols", col.toString());
+                      handleEditorChange();
+                    }}
+                    className={`text-xs px-2.5 py-1 rounded transition border font-semibold ${
+                      columnCount === col 
+                        ? 'bg-blue-600 text-white border-blue-600 shadow-sm' 
+                        : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100'
+                    }`}
+                  >
+                    {col === 1 ? "Single" : `${col} Col`}
+                  </button>
+                ))}
+              </div>
+
+              <div className="h-5 w-[1px] bg-slate-300 shrink-0 mx-0.5"></div>
+
+              {/* Inline Insertion items */}
+              <div className="flex items-center gap-1.5 shrink-0">
+                <button
+                  onClick={() => setShowImageModal(true)}
+                  className="text-xs px-2 py-1 bg-slate-100 border border-slate-300 hover:bg-slate-200 rounded text-slate-700 flex items-center gap-1 font-semibold"
+                >
+                  + Image
+                </button>
+                <button
+                  onClick={insertTable}
+                  className="text-xs px-2 py-1 bg-slate-100 border border-slate-300 hover:bg-slate-200 rounded text-slate-700 flex items-center gap-1 font-semibold"
+                >
+                  + Table (3x3)
+                </button>
+                <button
+                  onClick={insertPageBreak}
+                  className="text-xs px-2 py-1 bg-slate-100 border border-slate-300 hover:bg-slate-200 rounded text-slate-700 flex items-center gap-1 font-semibold"
+                >
+                  + Break
+                </button>
+              </div>
+
+            </div>
+          </div>
+
+          {/* Horizontal Hindi varnmala key bar */}
+          {typingLanguage === "hindi" && (
+            <div className="no-print bg-amber-50 border-b border-amber-200 px-3 py-2 flex items-center gap-2 overflow-x-auto no-scrollbar select-none shadow-inner">
+              <span className="text-[9px] bg-amber-200 text-amber-900 font-extrabold uppercase px-2 py-0.5 rounded shrink-0 animate-pulse">
+                VARNMALA:
+              </span>
+              <div className="flex gap-1.5 shrink-0">
+                {devanagariKeyboard.map((char, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => insertCharacter(char)}
+                    className="h-8 min-w-[32px] px-1.5 bg-white hover:bg-amber-50 active:bg-amber-100 text-slate-800 font-extrabold text-sm border border-amber-200 rounded shadow-sm flex items-center justify-center transition shrink-0"
+                  >
+                    {char}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* PAGE ZOOM / METRIC STATS */}
+          <div className="no-print bg-white border-b border-slate-200 px-4 py-1 flex items-center justify-between text-[11px] text-slate-500 font-medium select-none shrink-0">
+            <div className="flex items-center gap-3">
+              <span>Words: <b className="text-slate-800">{wordCount}</b></span>
+              <span>Chars: <b className="text-slate-800">{charCount}</b></span>
+              <span>Layout: <b className="text-blue-600 font-bold">{columnCount === 1 ? 'Standard Single' : `${columnCount} Columns`}</b></span>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="text-[9px] font-black uppercase text-slate-400">Zoom:</span>
+              <button 
+                onClick={() => setScale(Math.max(30, scale - 10))}
+                className="w-5 h-5 bg-slate-100 rounded flex items-center justify-center hover:bg-slate-200 active:bg-slate-300 font-bold text-slate-600"
+              >
+                -
+              </button>
+              <span className="font-bold w-10 text-center text-slate-700">{scale}%</span>
+              <button 
+                onClick={() => setScale(Math.min(150, scale + 10))}
+                className="w-5 h-5 bg-slate-100 rounded flex items-center justify-center hover:bg-slate-200 active:bg-slate-300 font-bold text-slate-600"
+              >
+                +
+              </button>
+              <button 
+                onClick={() => setScale(100)}
+                className="text-[9px] bg-blue-50 text-blue-600 font-extrabold px-1 py-0.5 rounded"
+              >
+                100%
+              </button>
+            </div>
+          </div>
+
+          {/* CANVAS AREA WRAPPING THE A4 DOCUMENT PAGE & COMMENTS SIDEBAR */}
+          <div className="flex-1 overflow-auto p-4 flex flex-col lg:flex-row items-center lg:items-start justify-center gap-6 min-h-[400px]">
+            
+            {/* Left Column: Table Toolbar & A4 Sheet */}
+            <div className="flex flex-col items-center">
+              
+              {/* Dynamic Table Contextual Bar */}
+              {activeTable && (
+                <div className="no-print bg-slate-800 text-white rounded-lg shadow-md px-4 py-2 mb-4 flex flex-wrap items-center justify-between gap-3 max-w-[794px] w-full border border-slate-700">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] bg-blue-600 text-white font-extrabold uppercase px-1.5 py-0.5 rounded shadow">Table Selected</span>
+                    <span className="text-xs text-slate-300 font-semibold">Row & Column Operations:</span>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    <button 
+                      onClick={addRow}
+                      className="bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-bold text-xs px-2.5 py-1.5 rounded transition shadow-sm"
+                    >
+                      ➕ Add Row
+                    </button>
+                    <button 
+                      onClick={addColumn}
+                      className="bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-bold text-xs px-2.5 py-1.5 rounded transition shadow-sm"
+                    >
+                      ➕ Add Column
+                    </button>
+                    <button 
+                      onClick={deleteRow}
+                      className="bg-red-600 hover:bg-red-500 active:bg-red-700 text-white font-bold text-xs px-2.5 py-1.5 rounded transition shadow-sm"
+                    >
+                      ❌ Delete Row
+                    </button>
+                    <button 
+                      onClick={deleteColumn}
+                      className="bg-red-600 hover:bg-red-500 active:bg-red-700 text-white font-bold text-xs px-2.5 py-1.5 rounded transition shadow-sm"
+                    >
+                      ❌ Delete Column
+                    </button>
+                  </div>
+                </div>
+              )}
+              
+              {/* Zoom Wrapper */}
+              <div 
+                style={{
+                  transform: `scale(${scale / 100})`,
+                  transformOrigin: "top center",
+                  transition: "transform 0.1s ease-out"
+                }}
+                className="page-container shrink-0 w-[794px]"
+              >
+                
+                {/* Document Sheet */}
+                <div className="print-page bg-white min-h-[1123px] w-[794px] p-16 shadow-xl border border-slate-200 rounded-sm text-slate-800 transition-all select-text">
+                  
+                  {/* Contenteditable Rich-Text container */}
+                  <div
+                    ref={editorRef}
+                    contentEditable
+                    onInput={handleEditorChange}
+                    onKeyDown={handleKeyDown}
+                    style={{
+                      lineHeight: lineSpacing,
+                      minHeight: "1000px",
+                      outline: "none"
+                    }}
+                    placeholder="Yahan se likhna shuru karein..."
+                    className={`word-columns-${columnCount} text-justify font-arial`}
+                  >
+                  </div>
+
+                </div>
+
+              </div>
+              
+            </div>
+
+            {/* Right Column: MS Word-style Yellow Comments panel */}
+            <div className="no-print w-full lg:w-80 shrink-0 bg-yellow-50 border border-yellow-200 rounded-xl p-4 shadow-md flex flex-col gap-3">
+              <div className="flex items-center justify-between border-b border-yellow-200 pb-2">
+                <span className="font-extrabold text-xs text-yellow-800 flex items-center gap-1.5">
+                  💬 MS Word Comments ({comments.length})
+                </span>
+                {comments.length > 0 && (
+                  <button 
+                    onClick={() => {
+                      if (window.confirm("Kripya confirm karein kya aap saare comments mitaana chahte hain?")) {
+                        comments.forEach(c => deleteComment(c.id));
+                      }
+                    }}
+                    className="text-[10px] text-red-600 font-bold hover:underline"
+                  >
+                    Clear All
+                  </button>
+                )}
+              </div>
+              
+              {comments.length === 0 ? (
+                <div className="text-center py-6 text-xs text-slate-500">
+                  <p className="font-semibold">Koi Comments nahi hai.</p>
+                  <p className="mt-1 text-[10px] text-slate-400 leading-relaxed">Document me text select karke toolbar me <b>💬 Comment</b> button par click karein.</p>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-3 max-h-[500px] overflow-y-auto no-scrollbar">
+                  {comments.map((comment) => (
+                    <div key={comment.id} className="bg-white border-l-4 border-yellow-400 rounded-lg p-3 shadow-sm hover:shadow transition">
+                      <div className="flex justify-between items-start mb-1">
+                        <div className="flex items-center gap-1">
+                          <span className="text-[10px] bg-yellow-100 text-yellow-800 font-bold px-1.5 py-0.5 rounded-md">
+                            {comment.author}
+                          </span>
+                          <span className="text-[9px] text-slate-400 font-medium">
+                            {comment.timestamp}
+                          </span>
+                        </div>
+                        <button 
+                          onClick={() => deleteComment(comment.id)}
+                          className="text-slate-400 hover:text-red-500 font-bold text-xs px-1"
+                          title="Delete Comment"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                      
+                      {/* Highlighted text citation */}
+                      <p className="text-[11px] text-slate-500 italic bg-slate-50 p-1.5 rounded border border-dashed border-slate-200 max-h-12 overflow-hidden text-ellipsis mb-2">
+                        "{comment.text}"
+                      </p>
+                      
+                      {/* Editable Comment Body */}
+                      <textarea
+                        value={comment.body}
+                        onChange={(e) => updateCommentBody(comment.id, e.target.value)}
+                        className="w-full text-xs text-slate-700 bg-yellow-50 border border-yellow-200 rounded p-1.5 focus:outline-none focus:ring-1 focus:ring-yellow-400 resize-none min-h-[50px]"
+                        placeholder="Yahan comment likhein..."
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+          </div>
+
+          {/* ACCESSIBLE BOTTOM FLOATING ACTION BUTTON (FAB) FOR MOBILE INSERTIONS */}
+          <div className="no-print fixed bottom-6 right-6 z-40 sm:hidden">
+            <button
+              onClick={() => setIsFabOpen(!isFabOpen)}
+              className="w-14 h-14 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white rounded-full flex items-center justify-center shadow-lg text-2xl font-black transform active:scale-95 transition"
+            >
+              {isFabOpen ? "✕" : "+"}
+            </button>
+
+            {isFabOpen && (
+              <div className="absolute bottom-16 right-0 bg-white border border-slate-200 rounded-lg shadow-xl p-3 flex flex-col gap-2.5 w-44">
+                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest border-b pb-1">Insert Element</p>
+                <button
+                  onClick={() => {
+                    setShowImageModal(true);
+                    setIsFabOpen(false);
+                  }}
+                  className="text-xs font-semibold text-slate-700 py-1 px-2 hover:bg-slate-50 rounded flex items-center gap-2"
+                >
+                  🖼️ Add Image
+                </button>
+                <button
+                  onClick={insertTable}
+                  className="text-xs font-semibold text-slate-700 py-1 px-2 hover:bg-slate-50 rounded flex items-center gap-2"
+                >
+                  📊 Add Table (3x3)
+                </button>
+                <button
+                  onClick={insertPageBreak}
+                  className="text-xs font-semibold text-slate-700 py-1 px-2 hover:bg-slate-50 rounded flex items-center gap-2"
+                >
+                  📏 Page Break
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* IMAGE INSERTION MODAL WITH THREE METHODS (LOCAL, URL, PRESET) */}
+          {showImageModal && (
+            <div className="no-print fixed inset-0 bg-slate-900 bg-opacity-60 flex items-center justify-center p-4 z-50">
+              <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-sm font-bold text-slate-800">Insert Image File / Resource</h3>
+                  <button 
+                    onClick={() => setShowImageModal(false)}
+                    className="text-slate-400 hover:text-slate-600 font-bold"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                <div className="space-y-4">
+                  {/* Method 1: Local upload with automatic Base64 Conversion */}
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Method 1: Local File Upload</label>
+                    <button
+                      onClick={() => fileInputRef.current.click()}
+                      className="w-full py-2 border-2 border-dashed border-slate-300 hover:border-blue-500 rounded-lg text-xs font-semibold text-slate-600 hover:text-blue-600 transition flex items-center justify-center gap-1"
+                    >
+                      📁 Browse & Convert Image
+                    </button>
+                    <input 
+                      type="file" 
+                      ref={fileInputRef} 
+                      onChange={triggerLocalImageUpload} 
+                      accept="image/*" 
+                      className="hidden" 
+                    />
+                  </div>
+
+                  {/* Method 2: Insert from Internet link */}
+                  <div className="pt-2 border-t border-slate-100">
+                    <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Method 2: Paste Internet URL</label>
+                    <div className="flex gap-2">
+                      <input 
+                        type="url" 
+                        value={imageUrlInput}
+                        onChange={(e) => setImageUrlInput(e.target.value)}
+                        placeholder="https://example.com/photo.jpg" 
+                        className="flex-1 text-xs border border-slate-300 rounded-lg px-3 py-1.5 focus:outline-none focus:border-blue-500"
+                      />
+                      <button
+                        onClick={insertImageUrl}
+                        className="bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-xs px-3 py-1.5 rounded-lg font-bold transition"
+                      >
+                        Insert
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Method 3: Beautiful preset graphic headers */}
+                  <div className="pt-3 border-t border-slate-100">
+                    <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Method 3: Insert Beautiful Template Art</label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        onClick={() => insertPresetImage("https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=500&q=80")}
+                        className="border border-slate-200 hover:border-blue-400 p-1.5 rounded-lg flex flex-col gap-1 transition text-left"
+                      >
+                        <div className="w-full h-12 rounded bg-cover bg-center" style={{backgroundImage: "url('https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=200&q=80')"}}></div>
+                        <span className="text-[9px] font-semibold text-slate-500">Corporate Header</span>
+                      </button>
+                      <button
+                        onClick={() => insertPresetImage("https://images.unsplash.com/photo-1513542789411-b6a5d4f31634?w=500&q=80")}
+                        className="border border-slate-200 hover:border-blue-400 p-1.5 rounded-lg flex flex-col gap-1 transition text-left"
+                      >
+                        <div className="w-full h-12 rounded bg-cover bg-center" style={{backgroundImage: "url('https://images.unsplash.com/photo-1513542789411-b6a5d4f31634?w=200&q=80')"}}></div>
+                        <span className="text-[9px] font-semibold text-slate-500">Creative Banner</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-5 border-t border-slate-100 pt-3 text-[10px] text-slate-400 italic text-center">
+                  All images automatically scale gracefully inside your Word Columns!
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* USER GUIDE & HELP MODAL */}
+          {showHelpModal && (
+            <div className="no-print fixed inset-0 bg-slate-900 bg-opacity-60 flex items-center justify-center p-4 z-50">
+              <div className="bg-white rounded-xl shadow-2xl max-w-sm w-full p-5">
+                <div className="flex items-center gap-2.5 mb-3">
+                  <span className="bg-blue-600 text-white font-extrabold px-1.5 py-0.5 rounded text-sm">W</span>
+                  <h3 className="font-extrabold text-slate-800 text-sm">WordWriter Help & Guide</h3>
+                </div>
+
+                <div className="space-y-2.5 text-xs text-slate-600 mb-5">
+                  <p>• <b>Layout Count Columns:</b> Content editable section supports up to 4 parallel dynamic columns. Choose columns in Layout toolbar and text auto-flows perfectly.</p>
+                  <p>• <b>Formatting Controls:</b> Select any text block on your screen and click on B, I, U, Size or Font options in Ribbon bar to apply formatting instantly.</p>
+                  <p>• <b>Image Insertion:</b> Add photos using Base64 upload or preset stock banners. They scale automatically inside standard column boundaries.</p>
+                  <p>• <b>Printing/PDF:</b> Save document anytime as standard high fidelity PDF files using Export button.</p>
+                </div>
+
+                <button
+                  onClick={() => setShowHelpModal(false)}
+                  className="w-full py-2 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-bold rounded-lg text-xs transition"
+                >
+                  OK, Got It!
+                </button>
+              </div>
+            </div>
+          )}
+
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>

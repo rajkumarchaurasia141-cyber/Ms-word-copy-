@@ -1,0 +1,35 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    
+    <!-- Outer document shadow/border fallback -->
+    <path
+        android:fillColor="#153e7a"
+        android:pathData="M34,24 h40 a4,4 0 0 1 4,4 v52 a4,4 0 0 1 -4,4 h-40 a4,4 0 0 1 -4,-4 v-52 a4,4 0 0 1 4,-4 z" />
+    
+    <!-- White document page -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M35,25 h38 a3,3 0 0 1 3,3 v50 a3,3 0 0 1 -3,3 h-38 a3,3 0 0 1 -3,-3 v-50 a3,3 0 0 1 3,-3 z" />
+        
+    <!-- Top folded-corner accent or standard header line in blue -->
+    <path
+        android:fillColor="#2563EB"
+        android:pathData="M40,32 h28 v3 h-28 z" />
+        
+    <!-- Bold Letter "W" in center -->
+    <!-- We can draw a classic W with beautiful vector segments -->
+    <path
+        android:fillColor="#1D4ED8"
+        android:pathData="M42,42 h4 l2,18 l3,-18 h3 l3,18 l2,-18 h4 l-4,24 h-4 l-3,-16 l-3,16 h-4 z" />
+
+    <!-- Extra decoration lines indicating typed text below W -->
+    <path
+        android:fillColor="#94A3B8"
+        android:pathData="M40,70 h28 v2 h-28 z" />
+    <path
+        android:fillColor="#94A3B8"
+        android:pathData="M40,74 h20 v2 h-20 z" />
+</vector>

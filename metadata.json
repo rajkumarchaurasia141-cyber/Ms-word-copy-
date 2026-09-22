@@ -1,0 +1,6 @@
+{
+  "name": "WordWriter - Mobile Word",
+  "description": "Mobile-first MS Word Clone with columns, styling, image/table inserts, and PDF exporting",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
