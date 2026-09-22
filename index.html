@@ -4,6 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
   <title>WordWriter - Mobile Word</title>
+  <!-- PWA Manifest & Theme Color -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#1d4ed8">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="WordWriter">
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- React and ReactDOM CDN -->
@@ -476,6 +483,58 @@
       // Active Cell and Table state
       const [activeCell, setActiveCell] = useState(null);
       const [activeTable, setActiveTable] = useState(null);
+
+      // PWA Install states
+      const [deferredPrompt, setDeferredPrompt] = useState(null);
+      const [showInstallBtn, setShowInstallBtn] = useState(false);
+      const [showInstallGuideModal, setShowInstallGuideModal] = useState(false);
+
+      useEffect(() => {
+        // Register Service Worker for PWA
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.register('sw.js')
+            .then(reg => console.log('Service Worker registered successfully', reg))
+            .catch(err => console.warn('Service Worker registration failed', err));
+        }
+
+        const handleBeforeInstall = (e) => {
+          e.preventDefault();
+          setDeferredPrompt(e);
+          setShowInstallBtn(true);
+        };
+
+        window.addEventListener('beforeinstallprompt', handleBeforeInstall);
+
+        window.addEventListener('appinstalled', () => {
+          setShowInstallBtn(false);
+          setDeferredPrompt(null);
+        });
+
+        // Always show install option for Android Chrome users to give manual instruction modal if prompt is not triggered
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        const isChrome = /Chrome/i.test(navigator.userAgent) && !/Edge/i.test(navigator.userAgent);
+        if (isMobile && isChrome) {
+          setShowInstallBtn(true);
+        }
+
+        return () => {
+          window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
+        };
+      }, []);
+
+      const handleInstallApp = async () => {
+        if (deferredPrompt) {
+          deferredPrompt.prompt();
+          const { outcome } = await deferredPrompt.userChoice;
+          if (outcome === 'accepted') {
+            setShowInstallBtn(false);
+            setDeferredPrompt(null);
+          }
+        } else {
+          // Open guidance modal
+          setShowInstallGuideModal(true);
+        }
+      };
 
       // Modals
       const [showImageModal, setShowImageModal] = useState(false);
@@ -1031,6 +1090,19 @@
             </div>
 
             <div className="flex items-center gap-1.5 sm:gap-2">
+              {showInstallBtn && (
+                <button 
+                  onClick={handleInstallApp}
+                  className="bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-slate-900 text-[11px] px-2.5 py-1.5 rounded-md flex items-center gap-1 font-extrabold shadow-sm animate-pulse transition shrink-0"
+                  title="Download and Install App to your phone"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  </svg>
+                  <span>INSTALL</span>
+                </button>
+              )}
+
               <button 
                 onClick={saveAsPDF}
                 className="bg-blue-600 hover:bg-blue-500 active:bg-blue-800 text-white text-xs px-2.5 py-1.5 rounded-md flex items-center gap-1 font-semibold transition"
@@ -1695,6 +1767,44 @@
                   className="w-full py-2 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-bold rounded-lg text-xs transition"
                 >
                   OK, Got It!
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* PWA INSTALLATION GUIDE MODAL FOR PHONE (CHROME/SAFARI) */}
+          {showInstallGuideModal && (
+            <div className="no-print fixed inset-0 bg-slate-900 bg-opacity-60 flex items-center justify-center p-4 z-50">
+              <div className="bg-white rounded-xl shadow-2xl max-w-sm w-full p-5 border border-amber-200">
+                <div className="flex items-center gap-2.5 mb-3 border-b border-slate-100 pb-2">
+                  <span className="bg-amber-500 text-slate-950 font-extrabold px-1.5 py-0.5 rounded text-sm flex items-center justify-center">📥</span>
+                  <h3 className="font-extrabold text-slate-800 text-sm">Install App to Your Phone</h3>
+                </div>
+
+                <p className="text-[11px] text-slate-500 mb-4 font-medium">
+                  इस वर्ड एडिटर ऐप को सीधे अपने फ़ोन में डाउनलोड और इंस्टॉल करने के लिए इन आसान स्टेप्स को फॉलो करें:
+                </p>
+
+                <div className="space-y-3 text-xs text-slate-600 mb-5">
+                  <div className="flex gap-2.5">
+                    <span className="bg-slate-100 text-slate-800 font-extrabold w-5 h-5 rounded-full flex items-center justify-center shrink-0">1</span>
+                    <p>अपने क्रोम ब्राउज़र में ऊपर दाईं ओर <b>3 डॉट्स (Menu ⋮)</b> बटन पर टैप करें।</p>
+                  </div>
+                  <div className="flex gap-2.5">
+                    <span className="bg-slate-100 text-slate-800 font-extrabold w-5 h-5 rounded-full flex items-center justify-center shrink-0">2</span>
+                    <p>मेन्यू लिस्ट में नीचे की ओर स्क्रॉल करें और <b>"Install app"</b> या <b>"Add to Home screen"</b> (होम स्क्रीन में जोड़ें) पर टैप करें।</p>
+                  </div>
+                  <div className="flex gap-2.5">
+                    <span className="bg-slate-100 text-slate-800 font-extrabold w-5 h-5 rounded-full flex items-center justify-center shrink-0">3</span>
+                    <p>पॉपअप आने पर <b>"Add"</b> या <b>"Install"</b> पर क्लिक करें। ऐप आपके फ़ोन स्क्रीन पर डाउनलोड हो जाएगा!</p>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => setShowInstallGuideModal(false)}
+                  className="w-full py-2 bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-slate-950 font-extrabold rounded-lg text-xs transition shadow"
+                >
+                  ठीक है, समझ गया!
                 </button>
               </div>
             </div>
